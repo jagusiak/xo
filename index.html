@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OX game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Noto Sans', sans-serif;
+        }
+        #board {
+            width: 100%;
+            max-width: 465px;
+            height: 100%;
+            max-height: 465px;
+            background-color: lightgray;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 2%;
+            padding: 0.5%;
+        }
+
+        .square {
+            border-radius: 5%;
+            background-color: white;
+            width: 32%;
+            height: 32%;
+            position: relative;
+        }
+
+        @keyframes highlight-red {
+            0% {background-color: white;}
+            50% {background-color: darkred;}
+            100% {background-color: white;}
+        }
+
+        @keyframes highlight-blue {
+            0% {background-color: white;}
+            50% {background-color: dodgerblue;}
+            100% {background-color: white;}
+        }
+
+        [data-disabled="0"] .square:hover {
+            cursor: pointer;
+        }
+
+        [data-sign='o']:not([data-disabled='1']) .square[data-selected='0']:hover {
+            animation: highlight-blue 0.5s infinite;
+        }
+
+        [data-sign='x']:not([data-disabled='1']) .square[data-selected='0']:hover {
+            animation: highlight-red 0.5s infinite;
+        }
+
+        .square[data-win='o'] {
+            background-color: lightskyblue;
+        }
+
+        .square[data-win='x'] {
+            background-color: palevioletred;
+        }
+
+        .square[data-sign='o']::after {
+            content: "";
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            right: 10%;
+            bottom: 10%;
+            border: 15px solid dodgerblue;
+            border-radius: 50%;
+        }
+
+        .square[data-sign='x']::after {
+            content: "";
+            position: absolute;
+            top: -5%;
+            left:  calc(50% - 8px);
+            right: calc(50% - 8px);
+            bottom: -5%;
+            border-left: 15px solid darkred;
+            transform: rotate(45deg);
+        }
+
+        .square[data-sign='x']::before {
+            content: "";
+            position: absolute;
+            top: -5%;
+            left:  calc(50% - 8px);
+            right: calc(50% - 8px);
+            bottom: -5%;
+            border-left: 15px solid darkred;
+            transform: rotate(-45deg);
+        }
+
+        .info {
+            padding-top: 20px;
+            display: none;
+            font-size: 36px;
+        }
+
+        .o {
+            color: dodgerblue;
+            font-weight: bold;
+        }
+
+        .x {
+            color: darkred;
+            font-weight: bold;
+        }
+
+        .link {
+            text-decoration: none;
+            color: darkslategray;
+            cursor: pointer;
+            display: inline-block;
+            padding: 0 5px;
+        }
+
+        .link:hover {
+            background-color: darkslategray;
+            color: white;
+        }
+
+        #board[data-sign='o'][data-win=''] ~ #o-move {
+            display: block;
+        }
+
+        #board[data-sign='x'][data-win=''] ~ #x-move {
+            display: block;
+        }
+
+        #board[data-win='o'] ~ #o-win {
+            display: block;
+        }
+
+        #board[data-win='x'] ~ #x-win {
+            display: block;
+        }
+
+        #board[data-win='d'] ~ #d-win {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="board" class="red">
+        <div id="s0" class="square"></div>
+        <div id="s1" class="square"></div>
+        <div id="s2" class="square"></div>
+        <div id="s3" class="square"></div>
+        <div id="s4" class="square"></div>
+        <div id="s5" class="square"></div>
+        <div id="s6" class="square"></div>
+        <div id="s7" class="square"></div>
+        <div id="s8" class="square"></div>
+    </div>
+    <div class="info" id="o-move">
+        <span class="o">O</span> turn
+    </div>
+    <div class="info" id="x-move">
+        <span class="x">X</span>  turn
+    </div>
+    <div class="info" id="o-win">
+        <span class="o">O</span>  wins! <div class="link" onclick="reset()">Again?</div>
+    </div>
+    <div class="info" id="x-win">
+        <span class="x">X</span> wins! <div class="link" onclick="reset()">Again?</div>
+    </div>
+    <div class="info" id="d-win">
+        Draw <div class="link" onclick="reset()">Again?</div>
+    </div>
+
+<script>
+    const resetBoard = (board) => {
+        board.setAttribute('data-disabled', '0');
+        board.setAttribute('data-sign', 'o');
+        board.setAttribute('data-win', '');
+    }
+
+    const checkRow = (squares, sign) => {
+        return squares.every(s => s.getAttribute('data-sign') === sign);
+    }
+
+    const checkWin = (board, squares, sign) => {
+        // test rows
+        const wining = {
+            squares: undefined
+        };
+        for (let x =0; x < 3; x++) {
+            const row = [], column = [];
+            for (let y =0; y < 3; y++) {
+                row.push(squares[x+3*y]);
+                column.push(squares[3*x+y]);
+            }
+            if (checkRow(row, sign)) {
+                wining.squares = row;
+                break;
+            }
+            if (checkRow(column, sign)) {
+                wining.squares = column;
+                break;
+            }
+        }
+        const cross = [squares[0], squares[4], squares[8]];
+        const backCross = [squares[2], squares[4], squares[6]];
+        if (checkRow(cross, sign)) {
+            wining.squares = cross;
+        }
+        if (checkRow(backCross, sign)) {
+            wining.squares = backCross;
+        }
+        if (!wining.squares && squares.every(s => s.getAttribute('data-sign') !== '')) {
+            return -1;
+        }
+        return wining.squares;
+    }
+
+    const onClick = (square, board, squares) => {
+        console.log(board.getAttribute('data-disabled'));
+        if (board.getAttribute('data-disabled') === '1') {
+            return
+        }
+        const sign =  board.getAttribute('data-sign');
+        square.setAttribute('data-selected', 1);
+        square.setAttribute('data-sign', sign);
+        board.setAttribute('data-sign', sign === 'x' ? 'o': 'x');
+        const winingSquares = checkWin(board, squares, sign);
+        if (winingSquares === -1) {
+            board.setAttribute('data-disabled', '1');
+            board.setAttribute('data-win', 'd');
+        } else {
+            if (winingSquares) {
+                board.setAttribute('data-disabled', '1');
+                board.setAttribute('data-win', sign);
+                winingSquares.forEach(s => s.setAttribute('data-win', sign));
+            }
+        }
+    }
+
+    const getBoard = () => {
+        const board = document.getElementById('board');
+        resetBoard(board);
+        return board;
+    }
+
+    const resetSquare = (square) => {
+        square.setAttribute('data-selected', 0);
+        square.setAttribute('data-sign', '');
+        square.setAttribute('data-win', '');
+    }
+
+    const getSquares = (board) => {
+        const squares = [];
+        for (let i = 0; i < 9; i++) {
+            const square = document.getElementById(`s${i}`);
+            resetSquare(square);
+            square.addEventListener("click", () => {
+                onClick(square, board, squares);
+            });
+            squares.push(square);
+        }
+        return squares;
+    }
+
+    const board = getBoard();
+    const squares = getSquares(board);
+
+    window.reset = () => {
+        resetBoard(board);
+        squares.forEach(s => resetSquare(s));
+    }
+
+</script>
+</body>
+</html>
